@@ -9,13 +9,49 @@ function! FindAlternateFile()
   if alternate_file['result'] == 'not-found'
     let alternate_file = TryTogglingCoffee(alternate_name)
   end
+  return alternate_file
+endfunc
 
+function! GotoAlternateFile()
+  let alternate_file = FindAlternateFile()
   if alternate_file['result'] == 'not-found'
     echo "Cannot find file named '" . alternate_name . "'"
   elseif alternate_file['result'] == 'found-file'
     exec "e " . alternate_file['file']
   elseif alternate_file['result'] == 'found-buffer'
-    exec "b " . alternate_file['buffer']
+    if IsBufferInCurrentTab(alternate_file['buffer'])
+      let win_num = bufwinnr(alternate_file['buffer'])
+      exec win_num . "wincmd w"
+    else
+      exec "b " . alternate_file['buffer']
+    end
+  end
+endfunc
+
+function! SplitToAlternateFile()
+  let alternate_file = FindAlternateFile()
+  if alternate_file['result'] == 'not-found'
+    echo "Cannot find file named '" . alternate_name . "'"
+  elseif alternate_file['result'] == 'found-file'
+    exec "vs " . alternate_file['file']
+  elseif alternate_file['result'] == 'found-buffer'
+    if IsBufferInCurrentTab(alternate_file['buffer'])
+      let win_num = bufwinnr(alternate_file['buffer'])
+      exec win_num . "wincmd w"
+    else
+      vs
+      wincmd w
+      exec "b " . alternate_file['buffer']
+    end
+  end
+endfunc
+
+function! IsBufferInCurrentTab(buffer_name)
+  let buffer_num = bufnr(a:buffer_name)
+  if index(tabpagebuflist(), buffer_num) >= 0
+    return 1
+  else
+    return 0
   end
 endfunc
 
@@ -71,6 +107,5 @@ function! s:AddSpec(filename)
   return substitute(a:filename, '\.', '_spec.', '')
 endfunc
 
-command! Alternate call FindAlternateFile()
-
-map `o :Alternate<cr>
+map `o :call GotoAlternateFile()<cr>
+map `O :call SplitToAlternateFile()<cr>
