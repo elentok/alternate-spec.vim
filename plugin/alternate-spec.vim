@@ -4,26 +4,37 @@
 function! FindAlternateFile()
   let filename = bufname('%')
   let basename = fnamemodify(filename, ':t')
-  let alternate_name = s:Switch(basename)
-  let alternate_file = FindFileByName(alternate_name)
-  if alternate_file['result'] == 'not-found'
-    let alternate_file = TryTogglingCoffee(alternate_name)
+  
+  let find_pattern = ''
+  if ASpec_IsSpec(filename)
+    let find_pattern = ASpec_GetImplPattern(filename)
+  else
+    let find_pattern = ASpec_GetSpecPattern(filename)
   end
+  
+  let alternate_file = FindFileByPattern(find_pattern)
   return alternate_file
 endfunc
 
 function! GotoAlternateFile()
-  let alternate_file = FindAlternateFile()
-  if alternate_file['result'] == 'not-found'
-    echo "Cannot find file named '" . alternate_name . "'"
-  elseif alternate_file['result'] == 'found-file'
-    exec "e " . alternate_file['file']
-  elseif alternate_file['result'] == 'found-buffer'
-    if IsBufferInCurrentTab(alternate_file['buffer'])
-      let win_num = bufwinnr(alternate_file['buffer'])
+  if exists('b:alternate')
+    
+    if IsBufferInCurrentTab(b:alternate)
+      let win_num = bufwinnr(b:alternate)
       exec win_num . "wincmd w"
     else
-      exec "b " . alternate_file['buffer']
+      exec "b " . b:alternate
+    end
+  else
+
+    let alternate_file = FindAlternateFile()
+    if alternate_file['result'] == 'not-found'
+      echo "Cannot find file alternate file"
+    elseif alternate_file['result'] == 'found-file'
+      let original = buffer_name('%')
+      let b:alternate = alternate_file['file']
+      exec "e " . alternate_file['file']
+      let b:alternate = original
     end
   end
 endfunc
@@ -55,17 +66,12 @@ function! IsBufferInCurrentTab(buffer_name)
   end
 endfunc
 
-function! FindFileByName(basename)
-  let buffer_name = bufname(a:basename)
-  if buffer_name == ''
-    let full_path = system('find . -iname "' . a:basename . '"')
-    if len(full_path) == 0
-      return { 'result': 'not-found' }
-    else
-      return { 'result': 'found-file', 'file': full_path }
-    end
+function! FindFileByPattern(pattern)
+  let full_path = system('find -E . -iregex "' . a:pattern . '"')
+  if len(full_path) == 0
+    return { 'result': 'not-found' }
   else
-    return { 'result': 'found-buffer', 'buffer': buffer_name }
+    return { 'result': 'found-file', 'file': substitute(full_path, ' *$', '', '') }
   end
 endfunc
 
@@ -88,24 +94,56 @@ function! ToggleCoffeeExtension(basename)
 endfunc
 
 function! s:Switch(filename)
-  if s:IsSpec(a:filename)
+  if ASpec_IsSpec(a:filename)
     return s:RemoveSpec(a:filename)
   else
     return s:AddSpec(a:filename)
   end
 endfunc
 
-function! s:IsSpec(filename)
-  return a:filename =~ '[\._-]spec\>'
+function! ASpec_Basename(filename)
+  let basename = fnamemodify(a:filename, ":t:r")
+  " incase of js.coffee
+  if basename =~ '\.js$'
+    let basename = fnamemodify(basename, ":r")
+  endif
+  return basename
+endfunc
+
+function! ASpec_IsSpec(filename)
+  let basename = ASpec_Basename(a:filename)
+  return basename =~ '[\._-]\(spec\|test\)$' || basename =~ 'Test$'
+endfunc
+
+function! ASpec_GetSpecPattern(filename)
+  let ext = fnamemodify(a:filename, ":e")
+  let basename = ASpec_Basename(a:filename)
+  let options = ["_spec." . ext, "_test." . ext, "Test." . ext]
+  if ext == 'js' || ext == 'coffee'
+    call add(options, '_spec.js.coffee')
+  end
+  
+  let options_regex = join(options, '|')
+  
+  return '.*/' . basename . '(' . options_regex . ')'
+endfunc
+
+function! ASpec_GetImplPattern(filename)
+  let ext = fnamemodify(a:filename, ":e")
+  let basename = ASpec_Basename(a:filename)
+  let basename = substitute(basename, '[\._-]\?\(spec\|test\|Test\)$', '', '')
+  if ext == 'js' || ext == 'coffee'
+    return '.*/(' . basename . '.js|' . basename . '.js.coffee|' . basename . '.coffee)$'
+  else
+    return '.*/' . basename . '.' . ext . '$'
+  endif
 endfunc
 
 function! s:RemoveSpec(filename)
   return substitute(a:filename, '[\._-]spec\>', '', '')
 endfunc
 
-function! s:AddSpec(filename)
-  return substitute(a:filename, '\.', '_spec.', '')
-endfunc
-
 map `o :call GotoAlternateFile()<cr>
 map `O :call SplitToAlternateFile()<cr>
+
+
