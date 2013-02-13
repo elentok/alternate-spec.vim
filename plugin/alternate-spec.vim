@@ -32,9 +32,9 @@ function! GotoAlternateFile()
       echo "Cannot find file alternate file"
     elseif alternate_file['result'] == 'found-file'
       let original = buffer_name('%')
-      let b:alternate = alternate_file['file']
+      let b:alternate = ASpec_CleanBufferName(alternate_file['file'])
       exec "e " . alternate_file['file']
-      let b:alternate = original
+      let b:alternate = ASpec_CleanBufferName(original)
     end
   end
 endfunc
@@ -141,6 +141,10 @@ endfunc
 
 function! s:RemoveSpec(filename)
   return substitute(a:filename, '[\._-]spec\>', '', '')
+endfunc
+
+function! ASpec_CleanBufferName(filename)
+  return substitute(a:filename, '^\.\/', '', '')
 endfunc
 
 map `o :call GotoAlternateFile()<cr>

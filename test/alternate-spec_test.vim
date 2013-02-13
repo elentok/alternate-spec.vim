@@ -43,4 +43,10 @@ function! Test_ASpec_GetImplPattern()
   call AssertEquals(actual, expected)
 endfunc
 
+function! Test_ASpec_CleanBufferName()
+  call Describe("./my/file.js")
+  let actual = ASpec_CleanBufferName("./my/file.js")
+  call AssertEquals(actual, "my/file.js")
+endfunc
+
 
