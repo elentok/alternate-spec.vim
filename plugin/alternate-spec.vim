@@ -67,7 +67,7 @@ function! IsBufferInCurrentTab(buffer_name)
 endfunc
 
 function! FindFileByPattern(pattern)
-  let full_path = system('find -E . -iregex "' . a:pattern . '"')
+  let full_path = system('find -E . -iregex "' . a:pattern . '" | head -1')
   if len(full_path) == 0
     return { 'result': 'not-found' }
   else
