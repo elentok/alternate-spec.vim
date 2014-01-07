@@ -112,14 +112,15 @@ endfunc
 
 function! ASpec_IsSpec(filename)
   let basename = ASpec_Basename(a:filename)
-  return basename =~ '[\._-]\(spec\|test\)$' || basename =~ 'Test$'
+  return basename =~ '[\._-]\(spec\|test\)$' || basename =~ '\(Spec\|Test\)$'
 endfunc
 
 function! ASpec_GetSpecPattern(filename)
   let ext = fnamemodify(a:filename, ":e")
   let basename = ASpec_Basename(a:filename)
-  let options = ["_spec." . ext, "_test." . ext, "Test." . ext]
+  let options = ["_spec." . ext, "_test." . ext, "Test." . ext, "Spec." . ext]
   if ext == 'js' || ext == 'coffee'
+    call add(options, 'Spec.js.coffee')
     call add(options, '_spec.js.coffee')
   end
   
@@ -131,7 +132,7 @@ endfunc
 function! ASpec_GetImplPattern(filename)
   let ext = fnamemodify(a:filename, ":e")
   let basename = ASpec_Basename(a:filename)
-  let basename = substitute(basename, '[\._-]\?\(spec\|test\|Test\)$', '', '')
+  let basename = substitute(basename, '[\._-]\?\(spec\|test\|Spec\|Test\)$', '', '')
   if ext == 'js' || ext == 'coffee'
     return '.*/(' . basename . '.js|' . basename . '.js.coffee|' . basename . '.coffee)$'
   else

@@ -23,11 +23,14 @@ function! Test_ASpec_IsSpec()
   
   call Describe("fileTest.js")
   call AssertEquals(ASpec_IsSpec('fileTest.js'), 1)
+
+  call Describe("fileSpec.js")
+  call AssertEquals(ASpec_IsSpec('fileSpec.js'), 1)
 endfunc
   
 function! Test_ASpec_GetSpecPattern()
   call Describe("file.js")
-  let expected = '.*/file(_spec.js|_test.js|Test.js|_spec.js.coffee)'
+  let expected = '.*/file(_spec.js|_test.js|Test.js|Spec.js|Spec.js.coffee|_spec.js.coffee)'
   call AssertEquals(ASpec_GetSpecPattern("file.js"), expected)
 endfunc
 
@@ -40,6 +43,11 @@ function! Test_ASpec_GetImplPattern()
   call Describe("file_spec.rb")
   let expected = '.*/file.rb$'
   let actual = ASpec_GetImplPattern('file_spec.rb')
+  call AssertEquals(actual, expected)
+
+  call Describe("fileSpec.js")
+  let expected = '.*/(file.js|file.js.coffee|file.coffee)$'
+  let actual = ASpec_GetImplPattern('fileSpec.js')
   call AssertEquals(actual, expected)
 endfunc
 
