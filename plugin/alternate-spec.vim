@@ -67,7 +67,7 @@ function! IsBufferInCurrentTab(buffer_name)
 endfunc
 
 function! FindFileByPattern(pattern)
-  let full_path = system('find -E . -iregex "' . a:pattern . '" | head -1')
+  let full_path = system('find . -iregex "' . a:pattern . '" | head -1')
   if len(full_path) == 0
     return { 'result': 'not-found' }
   else
@@ -124,9 +124,9 @@ function! ASpec_GetSpecPattern(filename)
     call add(options, '_spec.js.coffee')
   end
   
-  let options_regex = join(options, '|')
+  let options_regex = join(options, '\|')
   
-  return '.*/' . basename . '(' . options_regex . ')'
+  return '.*/' . basename . '\(' . options_regex . '\)'
 endfunc
 
 function! ASpec_GetImplPattern(filename)
@@ -134,7 +134,7 @@ function! ASpec_GetImplPattern(filename)
   let basename = ASpec_Basename(a:filename)
   let basename = substitute(basename, '[\._-]\?\(spec\|test\|Spec\|Test\)$', '', '')
   if ext == 'js' || ext == 'coffee'
-    return '.*/(' . basename . '.js|' . basename . '.js.coffee|' . basename . '.coffee)$'
+    return '.*/\(' . basename . '.js\|' . basename . '.js.coffee\|' . basename . '.coffee\)$'
   else
     return '.*/' . basename . '.' . ext . '$'
   endif
